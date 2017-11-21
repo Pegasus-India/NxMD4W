@@ -127,7 +127,7 @@ if len(result) > 0:
 
 		# Updating Table
 	sqltemp = ""
-	sqltemp = "Update `ControllerIP` Set `Updated` = 1"
+	sqltemp = "Update `Controller Parameters` Set `Updated` = 1"
 	cursor.execute(sqltemp)
 	conn.commit()
 	print "Table Updated"
@@ -140,29 +140,30 @@ cursor.execute(sql)
 sqlResult  = cursor.fetchall()
 
 if len(sqlResult) > 0:
+	print "Updating ODBC File"
+	f = open('/etc/odbc.ini', 'w')	
+	open('/etc/odbc.ini', 'w').close()
 	for rows in sqlResult:
 		ServerDSN = rows['ServerDSN']
 		Servername = rows['MyServer']
 		Db = rows['Database']
-		MyServer = rows['MyServer']
-		Hostname = rows['Hostname']
-		InstanceName = rows['InstanceName']
-		Port = rows['Port']
-		print ServerDSN, Servername, Db	
+		
+		f.write('[' + str(ServerDSN) + '] \n')
+		f.write('Description = Some Description \n')
+		f.write('Driver = FreeTDS \n')
+		f.write('Servername = ' + Servername + '\n')
+		f.write('Database = '+ Db + '\n')			
+		f.write(' \n')
 
-	print "Updating ODBC File"
-	open('/etc/odbc.ini', 'w').close()
-	f = open('/etc/odbc.ini', 'w')	
-
-	f.write('[' + str(ServerDSN) + '] \n')
-	f.write('Description = Some Description \n')
-	f.write('Driver = FreeTDS \n')
-	f.write('Servername = ' + Servername + '\n')
-	f.write('Database = '+ Db + '\n')			
-	f.write(' \n')
 	f.close()
 	print "odbc.conf updated!"
 
+# updating Freetds File
+sql = "Select * from `MSSQL`"
+cursor.execute(sql)
+sqlResult  = cursor.fetchall()
+
+if len(sqlResult) > 0:
 	# Updating freetds
 	print "Updating freetds.conf"
 	open('/etc/freetds/freetds.conf', 'w').close()
@@ -203,15 +204,24 @@ if len(sqlResult) > 0:
 	f.write('        tds version = 5.0 \n')
 	f.write('\n')
 	f.write('# A typical Microsoft server \n')
+	
+	for rows in sqlResult:
+		
+		MyServer = rows['MyServer']
+		Hostname = rows['Hostname']
+		InstanceName = rows['InstanceName']
+		Port = rows['Port']
+		
+		f.write(' \n')
+		f.write('[' + MyServer + '] \n')
+		f.write('        host = ' + Hostname + '\n')
+		f.write('	instance = ' + InstanceName + '\n')
+		f.write('        tdsversion = 7.0 \n')
+		f.write('        port = '+ str(Port) + '\n')
+		f.write('        charset = UTF-8 \n')
 
-	f.write(' \n')
-	f.write('[' + MyServer + '] \n')
-	f.write('        host = ' + Hostname + '\n')
-	f.write('	instance = ' + InstanceName + '\n')
-	f.write('        tdsversion = 7.0 \n')
-	f.write('        port = '+ str(Port) + '\n')
-	f.write('        charset = UTF-8 \n')
-
+	f.close()
+	
 	print "freetds.conf Updated"
 	
 	print "All Files Updated Successfully!"
